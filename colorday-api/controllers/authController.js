@@ -31,24 +31,25 @@ async function login(req, res) {
     }
 }
 
-async function verifyToken(req, res) {
+async function authenticateToken(req, res, next) {
     try {
         if (!req.headers.authorization) {
             return res.status(401).json({ message: 'No token provided' });
         }
 
         if (!req.headers.authorization.startsWith('Bearer ')) {
-            throw invalidTokenError;
+            throw new Error('Invalid token format');
         }
         
         const token = req.headers.authorization.split(' ')[1];
 
         jwt.verify(token, SECRET_KEY, (err, decoded) => {
             if (err) {
-                throw invalidTokenError;
+                throw new Error('Invalid token');
             }
 
-            return res.status(200).json({ message: 'Token verification successful' });
+            req.userId = decoded.id;
+            next();
         });
     } catch (invalidTokenError) {
         return res.status(403).json({ message: 'Failed to authenticate token' });
@@ -57,5 +58,5 @@ async function verifyToken(req, res) {
 
 module.exports = {
     login,
-    verifyToken
+    authenticateToken
 };
