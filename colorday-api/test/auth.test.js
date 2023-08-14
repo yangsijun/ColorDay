@@ -58,10 +58,11 @@ describe('Authentication', () => {
     describe('GET /api/auth/tokenValidation', () => {
         it('should return 200 for valid token', async () => {
             const user = {
+                _id: 'abc123',
                 username: 'logintestuser',
                 email: 'logintestuser@example.com',
             };
-            const token = jwt.sign({ id: user.email }, SECRET_KEY);
+            const token = jwt.sign({ id: user._id }, SECRET_KEY);
 
             const res = await request(app)
                 .get('/api/auth/tokenValidation')
