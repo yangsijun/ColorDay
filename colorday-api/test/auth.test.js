@@ -4,6 +4,9 @@ const request = require('supertest');
 const app = require('../index');
 const testDb = require('./db');
 const User = require('../models/user');
+const jwt = require('jsonwebtoken');
+const jwt_config = require('../config/jwtSecretKey.json');
+const SECRET_KEY = jwt_config.SECRET_KEY;
 
 describe('Authentication', () => {
 
@@ -31,6 +34,11 @@ describe('Authentication', () => {
 
             expect(res.status).to.equal(200);
             expect(res.body).to.have.property('message').to.equal('Login successful');
+            expect(res.body).to.have.property('token');
+
+            const decodedToken = jwt.verify(res.body.token, SECRET_KEY);
+            expect(decodedToken).to.have.property('id');
+            expect(decodedToken.id).to.be.a('string');
         });
 
         it('should reject invalid credentials', async () => {
@@ -43,6 +51,40 @@ describe('Authentication', () => {
 
             expect(res.status).to.equal(401);
             expect(res.body).to.have.property('message').to.equal('Invalid credentials');
+            expect(res.body).to.not.have.property('token');
         });
     });
+
+    describe('GET /api/auth/tokenValidation', () => {
+        it('should return 200 for valid token', async () => {
+            const user = {
+                username: 'logintestuser',
+                email: 'logintestuser@example.com',
+            };
+            const token = jwt.sign({ id: user.email }, SECRET_KEY);
+
+            const res = await request(app)
+                .get('/api/auth/tokenValidation')
+                .set('Authorization', `Bearer ${token}`);
+
+            expect(res.status).to.equal(200);
+            expect(res.body).to.have.property('message').to.equal('Token verification successful');
+        });
+        
+        it('should return 401 for missing token', async () => {
+            const res = await request(app).get('/api/auth/tokenValidation');
+
+            expect(res.status).to.equal(401);
+            expect(res.body).to.have.property('message').to.equal('No token provided');
+        });
+
+        it('should return 403 for invalid token', async () => {
+            const res = await request(app)
+                .get('/api/auth/tokenValidation')
+                .set('Authorization', 'Bearer invalidtoken');
+
+            expect(res.status).to.equal(403);
+            expect(res.body).to.have.property('message').to.equal('Failed to authenticate token');
+        });
+    })
 });
