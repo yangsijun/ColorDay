@@ -14,6 +14,7 @@ describe('Authentication', () => {
     after(async () => {
         await testDb.clearData();
         await testDb.disconnect();
+        process.exit();
     });
     
     let createdUserId;

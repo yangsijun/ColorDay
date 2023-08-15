@@ -5,12 +5,14 @@ const colorController = require('../controllers/colorController');
 
 router.use(authController.authenticateToken);
 
-router.get('/', colorController.getColorsByUser);
+router.get('/', colorController.getColors);
 
 router.post('/', colorController.createColor);
 
 router.put('/', colorController.updateColor);
 
 router.delete('/', colorController.deleteColor);
+
+router.get('/range', colorController.getColorsByDateRange);
 
 module.exports = router;

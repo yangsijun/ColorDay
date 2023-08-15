@@ -17,6 +17,7 @@ describe('Authentication', () => {
     after(async () => {
         await testDb.clearData();
         await testDb.disconnect();
+        process.exit();
     });
 
     beforeEach(async () => {

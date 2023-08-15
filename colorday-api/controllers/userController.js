@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const saltRound = require('../config/bcryptConfig.json').saltRound;
 const User = require('../models/user');
 
 
@@ -28,7 +29,7 @@ async function createUser(req, res) {
             return res.status(400).json({ message: 'Email already exists' });
         }
 
-        const hashedPassword = await bcrypt.hash(req.body.password, 10);
+        const hashedPassword = await bcrypt.hash(req.body.password, saltRound);
 
         const newUser = new User({
             username: req.body.username,

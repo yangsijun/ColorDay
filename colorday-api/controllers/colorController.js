@@ -1,8 +1,7 @@
-const bcrypt = require('bcrypt');
+const moment = require('moment');
 const Color = require('../models/color');
 
-
-async function getColorsByUser(req, res) {
+async function getColors(req, res) {
     try {
         const userId = req.userId;
 
@@ -22,6 +21,10 @@ async function createColor(req, res) {
         const userId = req.userId;
         const { date, colorCode, description } = req.body;
 
+        if (!moment(date, 'YYYY-MM-DD', true).isValid()) {
+            return res.status(400).json({ message: 'Invalid date format' });
+        }
+
         const newColor = new Color({
             userId,
             date,
@@ -40,6 +43,10 @@ async function updateColor(req, res) {
     try {
         const userId = req.userId;
         const { date, colorCode, description } = req.body;
+
+        if (!moment(date, 'YYYY-MM-DD', true).isValid()) {
+            return res.status(400).json({ message: 'Invalid date format' });
+        }
 
         const updatedColor = await Color.findOneAndUpdate(
             { userId, date },
@@ -62,6 +69,10 @@ async function deleteColor(req, res) {
         const userId = req.userId;
         const date = req.query.date;
 
+        if (!moment(date, 'YYYY-MM-DD', true).isValid()) {
+            return res.status(400).json({ message: 'Invalid date format' });
+        }
+
         const deletedColor = await Color.findOneAndDelete({ userId, date });
         if (!deletedColor) {
             return res.status(404).json({ message: 'Color not found' });
@@ -73,9 +84,30 @@ async function deleteColor(req, res) {
     }
 }
 
+async function getColorsByDateRange(req, res) {
+    try {
+        const userId = req.userId;
+        const { startDate, endDate } = req.query;
+
+        if (!moment(startDate, 'YYYY-MM-DD', true).isValid() || !moment(endDate, 'YYYY-MM-DD', true).isValid()) {
+            return res.status(400).json({ message: 'Invalid date format' });
+        }
+
+        const colors = await Color.find({
+            userId,
+            date: { $gte: startDate, $lte: endDate }
+        });
+
+        res.status(200).json(colors);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+}
+
 module.exports = {
-    getColorsByUser,
+    getColors,
     createColor,
     updateColor,
-    deleteColor
+    deleteColor,
+    getColorsByDateRange
 };

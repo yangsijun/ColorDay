@@ -2,19 +2,27 @@ const db = require('../db');
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
 const Color = require('../models/color');
+const saltRound = require('../config/bcryptConfig.json').saltRound;
 
 const clearData = async () => {
     try {
         await User.deleteMany({});
-        const newUser = new User({
-            username: 'testuser',
-            email: 'testuser@example.com',
-            password: await bcrypt.hash('testpassword', 10),
-        });
-        await newUser.save();
+        const newUsers = [
+            {
+                username: 'testuser',
+                email: 'testuser@example.com',
+                password: await bcrypt.hash('testpassword', saltRound),
+            },
+            {
+                username: 'testuser2',
+                email: 'testuser2@example.com',
+                password: await bcrypt.hash('testpassword', saltRound),
+            }
+        ];
+        await User.insertMany(newUsers);
 
         const user = await User.findOne({ email: 'testuser@example.com' });
-        
+        const user2 = await User.findOne({ email: 'testuser2@example.com' });
         await Color.deleteMany({});
         const newColors = [
             {
@@ -34,6 +42,12 @@ const clearData = async () => {
                 date: '2023-08-15',
                 colorCode: '#82482E',
                 description: 'Today is Brown'
+            },
+            {
+                userId: user2._id,
+                date: '2023-08-14',
+                colorCode: '#ffffff',
+                description: 'This is invalid case'
             }
         ];
         await Color.insertMany(newColors);
