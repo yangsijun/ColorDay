@@ -28,8 +28,8 @@ describe('Authentication', () => {
             const res = await request(app)
                 .post('/api/users')
                 .send({
-                    username: 'testuser',
-                    email: 'testuser@example.com',
+                    username: 'testnewuser',
+                    email: 'testnewuser@example.com',
                     password: 'testpassword'
                 });
 

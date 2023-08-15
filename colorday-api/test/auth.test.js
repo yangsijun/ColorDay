@@ -28,8 +28,8 @@ describe('Authentication', () => {
             const res = await request(app)
                 .post('/api/auth/login')
                 .send({
-                    email: 'logintestuser@example.com',
-                    password: 'logintestpw'
+                    email: 'testuser@example.com',
+                    password: 'testpassword'
                 });
 
             expect(res.status).to.equal(200);
