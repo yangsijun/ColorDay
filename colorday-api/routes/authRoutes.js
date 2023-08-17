@@ -3,5 +3,6 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 
 router.post('/login', authController.login);
+router.post('/change-password', authController.authenticateToken, authController.changePassword);
 
 module.exports = router;

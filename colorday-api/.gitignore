@@ -145,3 +145,4 @@ dist
 
 config/jwtSecretKey.json
 config/bcryptConfig.json
+config/adminConfig.json

@@ -18,7 +18,6 @@ describe('Color Management', () => {
     after(async () => {
         await testDb.clearData();
         await testDb.disconnect();
-        process.exit();
     });
 
     beforeEach(async () => {
@@ -28,7 +27,13 @@ describe('Color Management', () => {
     describe('GET /api/colors', () => {
         it('should retrieve colors for a user', async () => {
             const user = await User.findOne({ email: 'testuser@example.com' });
-            const token = jwt.sign({ id: user._id }, SECRET_KEY);
+            const token = jwt.sign(
+                {
+                    id: user._id,
+                    passwordChangedAt: user.passwordChangedAt 
+                }, 
+                SECRET_KEY
+            );
 
             const res = await request(app)
                 .get('/api/colors')
@@ -89,7 +94,13 @@ describe('Color Management', () => {
     describe('POST /api/colors', () => {
         it('should create a new color record', async () => {
             const user = await User.findOne({ email: 'testuser@example.com' });
-            const token = jwt.sign({ id: user._id }, SECRET_KEY);
+            const token = jwt.sign(
+                {
+                    id: user._id,
+                    passwordChangedAt: user.passwordChangedAt 
+                }, 
+                SECRET_KEY
+            );
 
             const res = await request(app)
                 .post('/api/colors')
@@ -136,7 +147,13 @@ describe('Color Management', () => {
 
         it('should reject invalid date format', async () => {
             const user = await User.findOne({ email: 'testuser@example.com' });
-            const token = jwt.sign({ id: user._id }, SECRET_KEY);
+            const token = jwt.sign(
+                {
+                    id: user._id,
+                    passwordChangedAt: user.passwordChangedAt 
+                }, 
+                SECRET_KEY
+            );
 
             const res = await request(app)
                 .get('/api/colors/range')
@@ -151,7 +168,13 @@ describe('Color Management', () => {
     describe('PUT /api/colors', () => {
         it('should update an existing color record', async () => {
             const user = await User.findOne({ email: 'testuser@example.com' });
-            const token = jwt.sign({ id: user._id }, SECRET_KEY);
+            const token = jwt.sign(
+                {
+                    id: user._id,
+                    passwordChangedAt: user.passwordChangedAt 
+                }, 
+                SECRET_KEY
+            );
             
             const updatedColorRes = await request(app)
                 .put('/api/colors/')
@@ -198,7 +221,13 @@ describe('Color Management', () => {
 
         it('should reject invalid date format', async () => {
             const user = await User.findOne({ email: 'testuser@example.com' });
-            const token = jwt.sign({ id: user._id }, SECRET_KEY);
+            const token = jwt.sign(
+                {
+                    id: user._id,
+                    passwordChangedAt: user.passwordChangedAt 
+                }, 
+                SECRET_KEY
+            );
 
             const res = await request(app)
                 .get('/api/colors/range')
@@ -213,7 +242,13 @@ describe('Color Management', () => {
     describe('DELETE /api/colors/', () => {
         it('should delete an existing color record', async () => {
             const user = await User.findOne({ email: 'testuser@example.com' });
-            const token = jwt.sign({ id: user._id }, SECRET_KEY);
+            const token = jwt.sign(
+                {
+                    id: user._id,
+                    passwordChangedAt: user.passwordChangedAt 
+                }, 
+                SECRET_KEY
+            );
     
             const deleteColorRes = await request(app)
                 .delete('/api/colors/?date=2023-08-15')
@@ -242,7 +277,13 @@ describe('Color Management', () => {
 
         it('should reject invalid date format', async () => {
             const user = await User.findOne({ email: 'testuser@example.com' });
-            const token = jwt.sign({ id: user._id }, SECRET_KEY);
+            const token = jwt.sign(
+                {
+                    id: user._id,
+                    passwordChangedAt: user.passwordChangedAt 
+                }, 
+                SECRET_KEY
+            );
 
             const res = await request(app)
                 .get('/api/colors/range')
@@ -257,7 +298,13 @@ describe('Color Management', () => {
     describe('GET /api/colors/range', () => {
         it('should retrieve colors within a date range for a user', async () => {
             const user = await User.findOne({ email: 'testuser@example.com' });
-            const token = jwt.sign({ id: user._id }, SECRET_KEY);
+            const token = jwt.sign(
+                {
+                    id: user._id,
+                    passwordChangedAt: user.passwordChangedAt 
+                }, 
+                SECRET_KEY
+            );
     
             const res = await request(app)
                 .get('/api/colors/range')
@@ -312,7 +359,13 @@ describe('Color Management', () => {
 
         it('should reject invalid date format', async () => {
             const user = await User.findOne({ email: 'testuser@example.com' });
-            const token = jwt.sign({ id: user._id }, SECRET_KEY);
+            const token = jwt.sign(
+                {
+                    id: user._id,
+                    passwordChangedAt: user.passwordChangedAt 
+                }, 
+                SECRET_KEY
+            );
 
             const res = await request(app)
                 .get('/api/colors/range')

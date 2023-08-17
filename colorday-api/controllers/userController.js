@@ -1,20 +1,12 @@
 const bcrypt = require('bcrypt');
 const saltRound = require('../config/bcryptConfig.json').saltRound;
 const User = require('../models/user');
+const { generateAccessToken } = require('./authController');
 
 
-async function getUsers(req, res) {
+async function getUser(req, res) {
     try {
-        const users = await User.find();
-        res.status(200).json(users);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching users' });
-    }
-}
-
-async function getUserById(req, res) {
-    try {
-        const userId = req.params.id;
+        const userId = req.userId;
         const user = await User.findById(userId);
         res.status(200).json(user);
     } catch (error) {
@@ -34,10 +26,13 @@ async function createUser(req, res) {
         const newUser = new User({
             username: req.body.username,
             email: req.body.email,
-            password: hashedPassword
+            password: hashedPassword,
+            passwordChangedAt: new Date().toString()
         });
         await newUser.save();
-        res.status(201).json(newUser);
+
+        const token = generateAccessToken(newUser);
+        res.status(201).json({ user: newUser, token: token });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server Error' });
@@ -46,7 +41,7 @@ async function createUser(req, res) {
 
 async function updateUser(req, res) {
     try {
-        const userId = req.params.id;
+        const userId = req.userId;
         const updatedUser = await User.findByIdAndUpdate(userId, req.body, { new: true });
         res.status(200).json(updatedUser);
     } catch (error) {
@@ -56,8 +51,8 @@ async function updateUser(req, res) {
 
 async function deleteUser(req, res) {
     try {
-        const userId = req.params.id;
-        const deletedUser = await User.findByIdAndDelete(userId);
+        const userId = req.userId;
+        const deletedUser = await User.findByIdAndDelete({ _id: userId });
         if (!deletedUser) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -69,8 +64,7 @@ async function deleteUser(req, res) {
 }
 
 module.exports = {
-    getUsers,
-    getUserById,
+    getUser,
     createUser,
     updateUser,
     deleteUser

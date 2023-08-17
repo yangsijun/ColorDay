@@ -17,7 +17,6 @@ describe('Authentication', () => {
     after(async () => {
         await testDb.clearData();
         await testDb.disconnect();
-        process.exit();
     });
 
     beforeEach(async () => {
@@ -53,6 +52,30 @@ describe('Authentication', () => {
             expect(res.status).to.equal(401);
             expect(res.body).to.have.property('message').to.equal('Invalid credentials');
             expect(res.body).to.not.have.property('token');
+        });
+    });
+
+    describe('POST /api/auth/change-password', () => {
+        it('should change password of a user', async () => {
+            const user = await User.findOne({ email: 'testuser@example.com' });
+            const token = jwt.sign(
+                {
+                    id: user._id,
+                    passwordChangedAt: user.passwordChangedAt
+                },
+                SECRET_KEY
+            );
+
+            const res = await request(app)
+                .post('/api/auth/change-password')
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    currentPassword: 'testpassword',
+                    newPassword: 'newtestpassword'
+                });
+            
+            expect(res.status).to.equal(200);
+            expect(res.body).to.have.property('message').to.equal('Password changed successfully');
         });
     });
 });

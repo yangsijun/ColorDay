@@ -12,11 +12,13 @@ const clearData = async () => {
                 username: 'testuser',
                 email: 'testuser@example.com',
                 password: await bcrypt.hash('testpassword', saltRound),
+                passwordChangedAt: new Date().toString()
             },
             {
                 username: 'testuser2',
                 email: 'testuser2@example.com',
                 password: await bcrypt.hash('testpassword', saltRound),
+                passwordChangedAt: new Date().toString()
             }
         ];
         await User.insertMany(newUsers);
