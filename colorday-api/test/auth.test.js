@@ -78,4 +78,24 @@ describe('Authentication', () => {
             expect(res.body).to.have.property('message').to.equal('Password changed successfully');
         });
     });
+
+    describe('POST /api/auth/authenticate', () => {
+        it('should authenticate a user', async () => {
+            const user = await User.findOne({ email: 'testuser@example.com' });
+            const token = jwt.sign(
+                {
+                    id: user._id,
+                    passwordChangedAt: user.passwordChangedAt
+                }
+                , SECRET_KEY
+            );
+
+            const res = await request(app)
+                .get('/api/auth/authenticate')
+                .set('Authorization', `Bearer ${token}`);
+            
+            expect(res.status).to.equal(200);
+            expect(res.body).to.have.property('message').to.equal('Authenticated');
+        });
+    });
 });
