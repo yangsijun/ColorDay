@@ -1,125 +1,237 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
-void main() {
-  runApp(const MyApp());
+import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+class UserModel {
+  String email = '';
+  String password = '';
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class LoginViewModel extends ChangeNotifier {
+  final UserModel _userModel;
+  String _token = '';
 
-  // This widget is the root of your application.
+  LoginViewModel(this._userModel);
+
+  String get email => _userModel.email;
+
+  void setEmail(String value) {
+    _userModel.email = value;
+    notifyListeners();
+  }
+
+  String get password => _userModel.password;
+
+  void setPassword(String value) {
+    _userModel.password = value;
+    notifyListeners();
+  }
+
+  String get token => _token;
+
+  Future<void> saveToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+    _token = token;
+    notifyListeners();
+  }
+
+  Future<void> loadToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('token') ?? '';
+    notifyListeners();
+  }
+
+  Future<void> deleteToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    _token = '';
+    notifyListeners();
+  }
+
+  Future<bool> login() async {
+    var url = Uri.https('colorday.sijun.dev', '/api/auth/login');
+    var response = await http.post(url, body: {
+      'email': email,
+      'password': password,
+    });
+
+    if (response.statusCode == 200) {
+      final token = jsonDecode(response.body)['token'];
+      await saveToken(token);
+      return true;
+    } else {
+      return false;
+    }
+  }
+}
+
+void main() {
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LoginViewModel(UserModel())),
+      ],
+      child: const App(),
+    ),
+  );
+}
+
+class App extends StatelessWidget {
+  const App({super.key});
+
+  Future<bool> _checkToken(BuildContext context) async {
+    final viewModel = Provider.of<LoginViewModel>(context, listen: false);
+    await viewModel.loadToken();
+
+    final token = viewModel.token;
+
+    if (token.isNotEmpty) {
+      var url = Uri.https('colorday.sijun.dev', '/api/auth/authenticate');
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        await viewModel.deleteToken();
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a blue toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return CupertinoApp(
+      home: FutureBuilder<bool>(
+        future: _checkToken(context),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            // 비동기 작업이 진행 중인 동안 로딩 화면 표시
+            return const CupertinoPageScaffold(
+              child: Center(
+                child: CupertinoActivityIndicator(),
+              ),
+            );
+          } else if (snapshot.hasError) {
+            // 에러 처리
+            return CupertinoPageScaffold(
+              child: Center(
+                child: Text('오류 발생: ${snapshot.error}'),
+              ),
+            );
+          } else {
+            // 작업이 완료되면 상태에 따라 페이지를 렌더링
+            if (snapshot.data == true) {
+              // 토큰이 유효한 경우
+              return const HomePage();
+            } else {
+              // 토큰이 없거나 유효하지 않은 경우
+              return const LoginPage();
+            }
+          }
+        },
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class LoginPage extends StatelessWidget {
+  const LoginPage({super.key});
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+  Future<void> _handleLogin(BuildContext context) async {
+    final viewModel = Provider.of<LoginViewModel>(context, listen: false);
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+    final loginSuccess = await viewModel.login();
 
-  final String title;
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+    if (loginSuccess) {
+      // 로그인이 성공한 경우
+      if (!context.mounted) return;
+      Navigator.of(context).pushReplacement(
+        CupertinoPageRoute(
+          builder: (context) => const HomePage(),
+        ),
+      );
+    } else {
+      // 로그인이 실패한 경우
+      if (!context.mounted) return;
+      showCupertinoDialog(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: const Text('로그인 실패'),
+          content: const Text('유효하지 않은 이메일 또는 비밀번호입니다.'),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              child: const Text('확인'),
+              onPressed: () {
+                Navigator.of(context).pop(); // currentContext 사용
+              },
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+    final viewModel = Provider.of<LoginViewModel>(context);
+
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('로그인 페이지'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              CupertinoTextField(
+                placeholder: '이메일',
+                onChanged: (value) => viewModel.setEmail(value),
+              ),
+              const SizedBox(height: 16.0),
+              CupertinoTextField(
+                placeholder: '비밀번호',
+                obscureText: true,
+                onChanged: (value) => viewModel.setPassword(value),
+              ),
+              const SizedBox(height: 32.0),
+              CupertinoButton.filled(
+                onPressed: () async {
+                  _handleLogin(context); // 로그인 처리 함수 호출
+                },
+                child: const Text('로그인'),
+              ),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: Text('홈 페이지'),
+      ),
+      child: Center(
+        child: Text('환영합니다! 홈 페이지입니다.'),
+      ),
     );
   }
 }
