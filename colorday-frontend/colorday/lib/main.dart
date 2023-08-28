@@ -1,73 +1,12 @@
-import 'dart:convert';
-
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
-class UserModel {
-  String email = '';
-  String password = '';
-}
+import 'package:colorday/models/user_model.dart';
+import 'package:colorday/views/login_page.dart';
+import 'package:colorday/views/home_page.dart';
+import 'package:colorday/viewmodels/login_viewmodel.dart';
 
-class LoginViewModel extends ChangeNotifier {
-  final UserModel _userModel;
-  String _token = '';
-
-  LoginViewModel(this._userModel);
-
-  String get email => _userModel.email;
-
-  void setEmail(String value) {
-    _userModel.email = value;
-    notifyListeners();
-  }
-
-  String get password => _userModel.password;
-
-  void setPassword(String value) {
-    _userModel.password = value;
-    notifyListeners();
-  }
-
-  String get token => _token;
-
-  Future<void> saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('token', token);
-    _token = token;
-    notifyListeners();
-  }
-
-  Future<void> loadToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('token') ?? '';
-    notifyListeners();
-  }
-
-  Future<void> deleteToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    _token = '';
-    notifyListeners();
-  }
-
-  Future<bool> login() async {
-    var url = Uri.https('colorday.sijun.dev', '/api/auth/login');
-    var response = await http.post(url, body: {
-      'email': email,
-      'password': password,
-    });
-
-    if (response.statusCode == 200) {
-      final token = jsonDecode(response.body)['token'];
-      await saveToken(token);
-      return true;
-    } else {
-      return false;
-    }
-  }
-}
 
 void main() {
   runApp(
@@ -143,95 +82,5 @@ class App extends StatelessWidget {
   }
 }
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
-
-  Future<void> _handleLogin(BuildContext context) async {
-    final viewModel = Provider.of<LoginViewModel>(context, listen: false);
-
-    final loginSuccess = await viewModel.login();
 
 
-    if (loginSuccess) {
-      // 로그인이 성공한 경우
-      if (!context.mounted) return;
-      Navigator.of(context).pushReplacement(
-        CupertinoPageRoute(
-          builder: (context) => const HomePage(),
-        ),
-      );
-    } else {
-      // 로그인이 실패한 경우
-      if (!context.mounted) return;
-      showCupertinoDialog(
-        context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: const Text('로그인 실패'),
-          content: const Text('유효하지 않은 이메일 또는 비밀번호입니다.'),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              child: const Text('확인'),
-              onPressed: () {
-                Navigator.of(context).pop(); // currentContext 사용
-              },
-            ),
-          ],
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final viewModel = Provider.of<LoginViewModel>(context);
-
-    return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('로그인 페이지'),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              CupertinoTextField(
-                placeholder: '이메일',
-                onChanged: (value) => viewModel.setEmail(value),
-              ),
-              const SizedBox(height: 16.0),
-              CupertinoTextField(
-                placeholder: '비밀번호',
-                obscureText: true,
-                onChanged: (value) => viewModel.setPassword(value),
-              ),
-              const SizedBox(height: 32.0),
-              CupertinoButton.filled(
-                onPressed: () async {
-                  _handleLogin(context); // 로그인 처리 함수 호출
-                },
-                child: const Text('로그인'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text('홈 페이지'),
-      ),
-      child: Center(
-        child: Text('환영합니다! 홈 페이지입니다.'),
-      ),
-    );
-  }
-}
