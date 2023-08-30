@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 
@@ -48,21 +48,21 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoApp(
+    return MaterialApp(
       home: FutureBuilder<bool>(
         future: _checkToken(context),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             // 비동기 작업이 진행 중인 동안 로딩 화면 표시
-            return const CupertinoPageScaffold(
-              child: Center(
-                child: CupertinoActivityIndicator(),
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
               ),
             );
           } else if (snapshot.hasError) {
             // 에러 처리
-            return CupertinoPageScaffold(
-              child: Center(
+            return Scaffold(
+              body: Center(
                 child: Text('오류 발생: ${snapshot.error}'),
               ),
             );
@@ -70,17 +70,18 @@ class App extends StatelessWidget {
             // 작업이 완료되면 상태에 따라 페이지를 렌더링
             if (snapshot.data == true) {
               // 토큰이 유효한 경우
-              return const HomePage();
+              return HomePage();
             } else {
               // 토큰이 없거나 유효하지 않은 경우
-              return const LoginPage();
+              return LoginPage();
             }
           }
         },
       ),
+      theme: ThemeData(
+        useMaterial3: true,
+        primaryColor: Colors.white,
+      ),
     );
   }
 }
-
-
-
