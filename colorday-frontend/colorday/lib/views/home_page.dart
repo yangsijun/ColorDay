@@ -1,6 +1,5 @@
 import 'package:colorday/viewmodels/day_color_viewmodel.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import 'package:colorday/models/day_color_model.dart';
@@ -35,7 +34,7 @@ class DayWidget extends StatelessWidget {
     TextEditingController descriptionController = TextEditingController(text: viewmodel.description);
 
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(4.0),
       
       child: GestureDetector(
         onTap: () {
@@ -148,7 +147,12 @@ class DayWidget extends StatelessWidget {
                 : (viewmodel.color!.computeLuminance() > .5)
                     ? Colors.black
                     : Colors.white,
-                fontWeight: FontWeight.bold
+                fontWeight: FontWeight.bold,
+                fontSize: (viewmodel.date.month == 1 && viewmodel.date.day == 1)
+                    ? 14
+                    : (viewmodel.date.day == 1)
+                        ? 20
+                        : 22,
               ),
               textAlign: TextAlign.center,
             ),
@@ -188,12 +192,12 @@ class ColorCalendarState extends State<ColorCalendar> {
     int minDateWeekDay = minDate.weekday % DateTime.daysPerWeek;
     int maxDateWeekDay = maxDate.weekday % DateTime.daysPerWeek;
     dayModels = List.generate(
-      365 + minDateWeekDay + DateTime.daysPerWeek - maxDateWeekDay - 1,
+      365 + minDateWeekDay + DateTime.daysPerWeek - maxDateWeekDay,
       (index) {
-        if (index < maxDateWeekDay + 1) {
+        if (index < maxDateWeekDay) {
           return null;
         }
-        final date = maxDate.subtract(Duration(days: index - maxDateWeekDay - 1));
+        final date = maxDate.subtract(Duration(days: index - maxDateWeekDay));
         return DayColorModel(
           date: date,
           isToday: date.year == widget.today.year &&
@@ -227,7 +231,7 @@ class ColorCalendarState extends State<ColorCalendar> {
             );
             days.add(
               ChangeNotifierProvider(
-                create: (_) => DayColorViewModel(dayModels[index + i + 1]!),
+                create: (_) => DayColorViewModel(dayModels[index + i]!),
                 child: const DayWidget(),
               ),
             );
@@ -250,6 +254,7 @@ class ColorCalendarState extends State<ColorCalendar> {
     double calendarMainAxisSpacing = 0;
 
     return GridView.builder(
+      padding: const EdgeInsets.all(8.0),
       reverse: true,
       controller: widget.scrollController,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

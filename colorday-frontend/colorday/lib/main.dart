@@ -70,7 +70,7 @@ class App extends StatelessWidget {
             // 작업이 완료되면 상태에 따라 페이지를 렌더링
             if (snapshot.data == true) {
               // 토큰이 유효한 경우
-              return HomePage();
+              return const HomePage();
             } else {
               // 토큰이 없거나 유효하지 않은 경우
               return LoginPage();

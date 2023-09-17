@@ -87,7 +87,7 @@ class LoginPage extends StatelessWidget {
                       if (!context.mounted) return;
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          builder: (context) => HomePage(),
+                          builder: (context) => const HomePage(),
                         ),
                       );
                     } else {
